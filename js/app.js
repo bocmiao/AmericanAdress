@@ -460,41 +460,115 @@
     selectTab(tabs[next].dataset.tab, true);
   });
 
-  // ---------- 各地区价格（第三方统计的 App Store 标价，附官方页面链接便于核实） ----------
-  // 只收录多个来源一致的数字；当地标价未能确认的写 null，页面上不显示标价
+  // ---------- 汇率 ----------
+  // 实时汇率来自 Miao API（上游 ExchangeRate-API，每日更新），本地缓存 6 小时。
+  // 取不到时（预览环境禁止外部请求、跨域未放行、网络不通等）使用内置参考汇率。
+  const FX_API = "https://api.miao.club/api/fx/rates";
+  const FX_SYMBOLS = ["CNY", "JPY", "PHP", "PKR", "TRY", "HUF", "NGN", "CAD", "EGP"];
+  const FX_CACHE_KEY = "tfag.fx.v1";
+  const FX_CACHE_MS = 6 * 60 * 60 * 1000;
+  // CNY、JPY 取自 Miao API 2026-09-25 的数值；其余由第三方价格统计中的标价与美元价反推（2026 年 8–9 月）
+  const FX_FALLBACK = {
+    live: false,
+    rates: { USD: 1, CNY: 6.7173, JPY: 158.69, PHP: 62.7, CAD: 1.394, HUF: 315.9, TRY: 48.8, PKR: 278.1, NGN: 1329, EGP: 50.3 }
+  };
+  let fx = FX_FALLBACK;
+
+  function validRates(rates) {
+    return !!rates && FX_SYMBOLS.every((c) => typeof rates[c] === "number" && rates[c] > 0);
+  }
+
+  function useLiveRates(rates, updatedAt) {
+    fx = { live: true, rates: Object.assign({}, rates, { USD: 1 }), updatedAt: updatedAt || null };
+    renderPriceTable();
+  }
+
+  async function loadLiveRates() {
+    const cached = load(FX_CACHE_KEY, null);
+    if (cached && validRates(cached.rates) && Date.now() - cached.fetchedAt < FX_CACHE_MS) {
+      useLiveRates(cached.rates, cached.updatedAt);
+      return;
+    }
+    if (typeof fetch !== "function") return;
+    const ctrl = typeof AbortController === "function" ? new AbortController() : null;
+    const timer = ctrl ? setTimeout(() => ctrl.abort(), 8000) : null;
+    try {
+      const res = await fetch(FX_API + "?base=USD&symbols=" + FX_SYMBOLS.join(","), ctrl ? { signal: ctrl.signal } : {});
+      if (!res.ok) return;
+      const json = await res.json();
+      const data = json && json.code === 200 ? json.data : null;
+      if (!data || data.base !== "USD" || !validRates(data.rates)) return;
+      const updatedAt = data.updatedAt || json.updatedAt || null;
+      save(FX_CACHE_KEY, { rates: data.rates, updatedAt, fetchedAt: Date.now() });
+      useLiveRates(data.rates, updatedAt);
+    } catch (e) {
+      /* 保持内置参考汇率 */
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+
+  function fxLabel() {
+    if (!fx.live) return "汇率：内置参考汇率（2026 年 8–9 月），实时汇率获取失败时使用。";
+    let when = "";
+    if (fx.updatedAt) {
+      const d = new Date(fx.updatedAt);
+      if (!isNaN(d)) {
+        const pad = (n) => String(n).padStart(2, "0");
+        when = "，更新于 " + d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+      }
+    }
+    return "汇率：Miao API 实时汇率（数据源 ExchangeRate-API" + when + "）。";
+  }
+
+  // ---------- 各地区价格（第三方统计的 App Store 标价，按同一套汇率换算） ----------
+  // 只收录多个来源一致的当地标价；约合美元和人民币由页面按当前汇率计算
   const US_PRICE = 19.99;
   const PRICE_DATA = [
     {
       key: "chatgpt", name: "ChatGPT Plus", appId: "6448311069",
-      source: "数据：第三方统计，2026 年 9 月 16 日采集的 39 个地区 App Store 标价。",
+      source: "标价：第三方统计，2026 年 9 月 16 日采集。",
       rows: [
-        { cc: "ph", zh: "菲律宾", local: "₱999", usd: 15.93, note: "最便宜" },
-        { cc: "ca", zh: "加拿大", local: null, usd: 17.93, note: "标价不含税" },
-        { cc: "jp", zh: "日本", local: "¥3,000", usd: 19.35 },
-        { cc: "us", zh: "美国", local: "$19.99", usd: 19.99, note: "本工具 · 免税州", base: true },
-        { cc: "tr", zh: "土耳其", local: "₺999.99", usd: 20.48, note: "6 月涨价一倍" },
-        { cc: "hu", zh: "匈牙利", local: "HUF 8,990", usd: 28.46, note: "最贵" }
+        { cc: "ph", zh: "菲律宾", cur: "PHP", amount: 999, text: "₱999" },
+        { cc: "ca", zh: "加拿大", cur: "CAD", amount: 24.99, text: "CA$24.99", note: "标价不含税" },
+        { cc: "jp", zh: "日本", cur: "JPY", amount: 3000, text: "¥3,000" },
+        { cc: "us", zh: "美国", cur: "USD", amount: 19.99, text: "$19.99", note: "本工具 · 免税州", base: true },
+        { cc: "tr", zh: "土耳其", cur: "TRY", amount: 999.99, text: "₺999.99", note: "6 月涨价一倍" },
+        { cc: "hu", zh: "匈牙利", cur: "HUF", amount: 8990, text: "HUF 8,990" }
       ]
     },
     {
       key: "claude", name: "Claude Pro", appId: "6473753684",
-      source: "数据：第三方统计，2026 年 8 月的 App Store 标价。",
+      source: "标价：第三方统计，2026 年 8 月。",
       rows: [
-        { cc: "pk", zh: "巴基斯坦", local: "Rs 4,900", usd: 17.62, note: "最便宜" },
-        { cc: "jp", zh: "日本", local: "¥3,000", usd: 19.03 },
-        { cc: "eg", zh: "埃及", local: null, usd: 19.89 },
-        { cc: "ca", zh: "加拿大", local: null, usd: 19.91, note: "标价不含税" },
-        { cc: "us", zh: "美国", local: "$19.99", usd: 19.99, note: "本工具 · 免税州", base: true },
-        { cc: "ng", zh: "尼日利亚", local: "₦29,900", usd: 22.5, note: "6 月涨价一倍" },
-        { cc: "dk", zh: "丹麦", local: null, usd: 27.63, note: "最贵" }
+        { cc: "pk", zh: "巴基斯坦", cur: "PKR", amount: 4900, text: "Rs 4,900" },
+        { cc: "jp", zh: "日本", cur: "JPY", amount: 3000, text: "¥3,000" },
+        { cc: "eg", zh: "埃及", cur: "EGP", amount: 999.99, text: "E£999.99" },
+        { cc: "us", zh: "美国", cur: "USD", amount: 19.99, text: "$19.99", note: "本工具 · 免税州", base: true },
+        { cc: "ng", zh: "尼日利亚", cur: "NGN", amount: 29900, text: "₦29,900", note: "6 月涨价一倍" }
       ]
     }
   ];
-  const PRICE_FOOTNOTE = "约合美元按统计当天汇率折算。美国和加拿大的标价不含税（加拿大还要加 5%–15% 销售税），其他地区大多已含税。"
-    + "没写当地标价的是未能确认。价格会随厂商调价变化，点 ↗ 可在 App Store 核实（看「App 内购买项目」）。";
+  const PRICE_FOOTNOTE = "美国和加拿大的标价不含税（加拿大还要加 5%–15% 销售税），其他地区大多已含税。"
+    + "价格会随厂商调价变化，点 ↗ 可在 App Store 核实（看「App 内购买项目」）。";
   const priceChips = $("price-app-chips");
   const priceRows = $("price-rows");
   const VERIFY_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>';
+
+  // 按当前汇率换算并排序，同时标出最便宜和最贵的地区
+  function pricedRows(app) {
+    const rows = app.rows.map((r) => {
+      const usd = r.amount / fx.rates[r.cur];
+      return Object.assign({}, r, { usd, cny: usd * fx.rates.CNY, tags: r.note ? [r.note] : [] });
+    });
+    rows.sort((x, y) => x.usd - y.usd);
+    const others = rows.filter((r) => !r.base);
+    const cheapest = others[0];
+    const priciest = others[others.length - 1];
+    if (cheapest && cheapest.usd < US_PRICE) cheapest.tags.push("最便宜");
+    if (priciest && priciest !== cheapest && priciest.usd > US_PRICE) priciest.tags.push("最贵");
+    return rows;
+  }
 
   function deltaBadge(row) {
     const b = document.createElement("span");
@@ -522,26 +596,36 @@
       b.tabIndex = on ? 0 : -1;
     }
     priceRows.textContent = "";
-    for (const row of app.rows) {
+    for (const row of pricedRows(app)) {
       const tr = document.createElement("tr");
       if (row.base) tr.className = "base";
 
       const name = document.createElement("td");
       name.textContent = row.zh;
-      if (row.note) {
+      if (row.tags.length) {
         const n = document.createElement("span");
         n.className = "row-note";
-        n.textContent = row.note;
+        n.textContent = row.tags.join(" · ");
         name.appendChild(n);
       }
       const price = document.createElement("td");
       price.textContent = (row.base ? "" : "≈ ") + "$" + row.usd.toFixed(2);
-      if (row.local && !row.base) {
-        const l = document.createElement("span");
-        l.className = "price-local";
-        l.textContent = "标价 " + row.local;
-        price.appendChild(l);
+      const l = document.createElement("span");
+      l.className = "price-local";
+      if (!row.base) {
+        const t = document.createElement("span");
+        t.className = "pl-text";
+        t.textContent = row.text;
+        const sep = document.createElement("span");
+        sep.className = "pl-sep";
+        sep.textContent = " · ";
+        l.append(t, sep);
       }
+      const c = document.createElement("span");
+      c.className = "pl-cny";
+      c.textContent = "约 " + Math.round(row.cny) + " 元";
+      l.appendChild(c);
+      price.appendChild(l);
       const delta = document.createElement("td");
       delta.appendChild(deltaBadge(row));
 
@@ -559,7 +643,7 @@
       tr.append(name, price, delta, link);
       priceRows.appendChild(tr);
     }
-    $("price-source").textContent = app.source + PRICE_FOOTNOTE;
+    $("price-source").textContent = app.source + fxLabel() + PRICE_FOOTNOTE;
   }
 
   for (const app of PRICE_DATA) {
@@ -648,6 +732,7 @@
   renderHistory();
   selectTab(prefs.tab);
   renderPriceTable();
+  loadLiveRates();
   generateOne();
   updateNav();
 })();
