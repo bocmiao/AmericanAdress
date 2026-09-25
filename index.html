@@ -15,6 +15,10 @@
     <header class="hero">
       <h1>美国免税州地址生成器</h1>
       <p class="subtitle">生成免销售税州的美国地址，用于注册美区 Apple ID。城市和邮编都核对过，彼此匹配。</p>
+      <nav class="jump" aria-label="页面导航">
+        <a href="#guide">注册教程</a>
+        <a href="#prices">各地区订阅价格</a>
+      </nav>
     </header>
 
     <section class="card controls" aria-label="生成选项">
@@ -60,6 +64,109 @@
       <ol class="list" id="batch-list"></ol>
     </section>
 
+    <section class="card prose" id="guide" aria-labelledby="guide-title">
+      <h2 id="guide-title">注册教程</h2>
+      <div class="tabs" role="tablist" aria-label="注册教程">
+        <button type="button" class="tab" role="tab" id="tab-iphone" aria-controls="panel-iphone" data-tab="iphone">手机注册</button>
+        <button type="button" class="tab" role="tab" id="tab-web" aria-controls="panel-web" data-tab="web">网页注册</button>
+        <button type="button" class="tab" role="tab" id="tab-pay" aria-controls="panel-pay" data-tab="pay">充值订阅</button>
+        <button type="button" class="tab" role="tab" id="tab-faq" aria-controls="panel-faq" data-tab="faq">常见问题</button>
+      </div>
+
+      <div class="tab-panel" role="tabpanel" id="panel-iphone" aria-labelledby="tab-iphone">
+        <p>推荐用这种方式。在 App Store 里下载免费 App 时创建账户，付款方式里最容易出现「None（无）」。</p>
+        <ol class="steps">
+          <li>打开「设置」，点最上方你的名字，进入「媒体与购买项目」，选「退出登录」。这里只退出 App Store 账户，iCloud、照片和通讯录不受影响。</li>
+          <li>打开 App Store，随便找一个免费 App 点「获取」，在弹出的窗口里选「创建新 Apple 账户」。</li>
+          <li>填一个从没注册过 Apple 账户的邮箱，设好密码，「国家或地区」选 <b>United States</b>。</li>
+          <li>输入邮箱收到的验证码。</li>
+          <li>付款方式选 <b>None</b>，然后照本页的生成结果填账单信息。点结果里的任意一行就能复制。
+            <dl class="field-map">
+              <dt>First Name</dt><dd>名</dd>
+              <dt>Last Name</dt><dd>姓</dd>
+              <dt>Street</dt><dd>街道（有公寓号就填到第二行）</dd>
+              <dt>City</dt><dd>城市</dd>
+              <dt>State</dt><dd>在下拉列表里选州名，如 Oregon</dd>
+              <dt>Zip</dt><dd>邮编</dd>
+              <dt>Phone</dt><dd>区号 + 7 位号码</dd>
+            </dl>
+          </li>
+          <li>验证手机号。这一步要填能收短信的真实号码，+86 号码可以用。它是账户的安全验证号码，和账单里的电话无关。</li>
+          <li>完成后 App Store 就切换到美区了。想换回原来的账户，同样在「媒体与购买项目」里退出，再登录原账户。</li>
+        </ol>
+      </div>
+
+      <div class="tab-panel" role="tabpanel" id="panel-web" aria-labelledby="tab-web" hidden>
+        <p>iPhone 上创建失败时用这种方式，电脑或手机浏览器都可以。</p>
+        <ol class="steps">
+          <li>打开 <a href="https://account.apple.com" target="_blank" rel="noopener noreferrer">account.apple.com</a>，点「创建你的 Apple 账户」。</li>
+          <li>「国家或地区」选<b>美国</b>，填姓名、生日、邮箱、密码和手机号，完成邮箱和短信验证。</li>
+          <li>在 iPhone 上进入「设置 → 你的名字 → 媒体与购买项目」，退出当前账户，然后用新账户登录。</li>
+          <li>打开 App Store 时会提示这个账户还没在 App Store 中使用过，点「检查」，同意条款。</li>
+          <li>付款方式选 <b>None</b>，账单地址和电话照本页的生成结果填，字段对应关系见「手机注册」第 5 步。</li>
+        </ol>
+      </div>
+
+      <div class="tab-panel" role="tabpanel" id="panel-pay" aria-labelledby="tab-pay" hidden>
+        <h3>充值</h3>
+        <ol class="steps">
+          <li>美区账户用美国 App Store 礼品卡（Apple Gift Card）充值。</li>
+          <li>打开 App Store，点右上角头像，选「兑换充值卡或代码」，输入卡号或扫描卡片。</li>
+        </ol>
+        <p class="note warn">礼品卡尽量从 Apple 官网或正规零售商购买。来路不明的低价卡可能是用盗刷的信用卡买的，兑换后账户可能被停用，余额也拿不回来。</p>
+
+        <h3>订阅 App 内服务（如 ChatGPT Plus、Claude Pro）</h3>
+        <ol class="steps">
+          <li>在美区 App Store 下载对应的 App，用该服务自己的账号登录。</li>
+          <li>在 App 里选择升级套餐，用 Apple 账户余额付款。账单地址在免税州，不另加销售税，标价 $19.99 就只扣 $19.99。</li>
+          <li>订阅会自动续费。到期前余额不够就会续费失败、服务降级，记得提前充值。</li>
+          <li>管理或取消订阅：「设置 → 你的名字 → 订阅」。</li>
+        </ol>
+        <p class="note">这些服务本身有支持地区的限制，以各服务的官方说明为准。Apple 账户是哪个地区，不改变这一点。</p>
+      </div>
+
+      <div class="tab-panel" role="tabpanel" id="panel-faq" aria-labelledby="tab-faq" hidden>
+        <dl class="faq">
+          <dt>付款方式里没有「None」怎么办？</dt>
+          <dd>改用「手机注册」里的方式：在 App Store 点「获取」免费 App 时创建账户，这种方式最容易出现 None 选项。同时确认国家或地区选的是 United States。</dd>
+          <dt>提示账单地址无效？</dt>
+          <dd>换一个城市重新生成。填写时注意 State 下拉列表选的州要和生成结果一致，邮编不要多空格。</dd>
+          <dt>能不能把现有账户直接改成美区？</dt>
+          <dd>可以在「媒体与购买项目」里修改国家或地区，但要先花完余额、取消所有订阅并等当期结束，有时还要退出家庭共享。通常新注册一个更省事。</dd>
+          <dt>会影响 iCloud 里的数据吗？</dt>
+          <dd>不会。美区账户只登录在「媒体与购买项目」里，iCloud 继续用原来的账户，照片、通讯录等数据不受影响。</dd>
+          <dt>选哪个州好？</dt>
+          <dd>Oregon 和 Delaware 最常用，全州都不收销售税。其他三个州也可以用，区别见下方「免税州说明」。</dd>
+          <dt>生成的电话号码有什么用？</dt>
+          <dd>只用来填账单信息里的电话。安全验证的手机号要填你自己能收短信的号码。</dd>
+        </dl>
+      </div>
+    </section>
+
+    <section class="card prose" id="prices" aria-labelledby="prices-title">
+      <h2 id="prices-title">各地区订阅价格</h2>
+      <p>美区账户 + 免税州地址：ChatGPT Plus 和 Claude Pro 都是 <b>$19.99/月</b>，不另加税。</p>
+
+      <div class="table-scroll">
+        <table class="data-table">
+          <caption>2026 年 8 月第三方统计的 App Store 最低价</caption>
+          <thead><tr><th>订阅</th><th>最便宜的地区</th><th>约合美元</th><th>比美区</th></tr></thead>
+          <tbody>
+            <tr><td>ChatGPT Plus</td><td>菲律宾 ₱999</td><td>≈ $16</td><td>−20%</td></tr>
+            <tr><td>Claude Pro</td><td>巴基斯坦 Rs 4,900</td><td>≈ $17.6</td><td>−12%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>2026 年 6 月以前，土耳其的 ChatGPT Plus（₺499.99）和尼日利亚的 Claude Pro（₦14,900）只要美区一半左右的价格。6 月两边都把价格翻了一倍，现在已经和美区差不多甚至更贵。</p>
+      <p class="note">本工具只做美区地址：现在最多只差 $2–4/月，而这些地区要用当地的礼品卡或支付方式，通过第三方购买一般要加价，差价基本抵消；价格还可能像土耳其、尼日利亚那样一夜翻倍。美区礼品卡好买、App 最全，综合下来更省事。</p>
+
+      <h3>查看实时价格</h3>
+      <p class="hint-text">价格随汇率和厂商调价变化，以 App Store 实时显示为准。打开后看「App 内购买项目（In-App Purchases）」一栏。除美国和加拿大外，大多数地区的标价已含当地税。</p>
+      <div class="chips" id="price-app-chips" role="radiogroup" aria-label="选择 App"></div>
+      <div class="country-links" id="price-links"></div>
+    </section>
+
     <section class="card">
       <details id="history-details">
         <summary>
@@ -74,26 +181,16 @@
       </details>
     </section>
 
-    <section class="card guide">
+    <section class="card">
       <details>
         <summary><h2>免税州说明</h2></summary>
-        <p>美国的销售税由各州自行规定，下列 5 个州不征收州级销售税。Apple ID 的账单地址填这些州时，App Store 购买和礼品卡充值都不会额外加税，标价多少就付多少。</p>
-        <table class="tax-table">
-          <thead><tr><th>州</th><th>缩写</th><th>区号</th><th>说明</th></tr></thead>
-          <tbody id="tax-table-body"></tbody>
-        </table>
-      </details>
-      <details>
-        <summary><h2>注册美区 Apple ID 步骤</h2></summary>
-        <ol class="steps">
-          <li>在 iPhone 的「设置 → 媒体与购买项目」中退出当前账户，或在电脑上打开 <a href="https://account.apple.com" target="_blank" rel="noopener noreferrer">account.apple.com</a> 创建新账户。</li>
-          <li>国家或地区选择 <b>United States（美国）</b>。</li>
-          <li>付款方式选择 <b>None（无）</b>。如果没有这个选项，先在 App Store 里点「获取」一个免费 App，再从弹出的窗口中创建账户。</li>
-          <li>账单地址照本页的结果填：Street、City、State、ZIP 分别对应街道、城市、州、邮编。「State」在下拉框里选州名，本页也显示了缩写。</li>
-          <li>账单地址里的电话可以填本页生成的号码（Area Code 是区号，Phone 是 7 位号码）。</li>
-          <li>账户安全验证用的「受信任手机号」必须能收短信，填你自己的真实号码，国内 +86 号码可以用。</li>
-          <li>姓名可以填生成的英文名，也可以填自己的拼音。</li>
-        </ol>
+        <p>美国的销售税由各州自行规定，下列 5 个州不征收州级销售税。Apple 账户的账单地址填这些州时，App Store 购买和订阅都不会额外加税，标价多少就付多少。</p>
+        <div class="table-scroll">
+          <table class="data-table tax-table">
+            <thead><tr><th>州</th><th>缩写</th><th>区号</th><th>说明</th></tr></thead>
+            <tbody id="tax-table-body"></tbody>
+          </table>
+        </div>
       </details>
     </section>
 

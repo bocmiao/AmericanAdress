@@ -62,7 +62,8 @@
   }
 
   // ---------- 状态 ----------
-  const prefs = Object.assign({ state: "OR", city: "", unit: false }, load(PREFS_KEY, {}));
+  const prefs = Object.assign({ state: "OR", city: "", unit: false, tab: "iphone", priceApp: "chatgpt" },
+    load(PREFS_KEY, {}));
   if (prefs.state !== RANDOM && !gen.findState(prefs.state)) prefs.state = "OR";
   let history = load(HISTORY_KEY, []);
   if (!Array.isArray(history)) history = [];
@@ -385,10 +386,109 @@
     }
   }
 
+  // ---------- 注册教程标签页 ----------
+  const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
+
+  function selectTab(name, focus) {
+    if (!tabs.some((t) => t.dataset.tab === name)) name = tabs[0].dataset.tab;
+    for (const t of tabs) {
+      const on = t.dataset.tab === name;
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on ? 0 : -1;
+      $(t.getAttribute("aria-controls")).hidden = !on;
+      if (on && focus) t.focus();
+    }
+    if (prefs.tab !== name) {
+      prefs.tab = name;
+      save(PREFS_KEY, prefs);
+    }
+  }
+
+  for (const t of tabs) t.addEventListener("click", () => selectTab(t.dataset.tab));
+  tabs[0].parentElement.addEventListener("keydown", (e) => {
+    const i = tabs.findIndex((t) => t.dataset.tab === prefs.tab);
+    let next = null;
+    if (e.key === "ArrowRight") next = (i + 1) % tabs.length;
+    else if (e.key === "ArrowLeft") next = (i - 1 + tabs.length) % tabs.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = tabs.length - 1;
+    if (next === null) return;
+    e.preventDefault();
+    selectTab(tabs[next].dataset.tab, true);
+  });
+
+  // ---------- 各地区价格（链接到 App Store 官方页面，价格实时） ----------
+  const PRICE_APPS = [
+    { key: "chatgpt", name: "ChatGPT", id: "6448311069", cheapest: "ph" },
+    { key: "claude", name: "Claude", id: "6473753684", cheapest: "pk" }
+  ];
+  const PRICE_COUNTRIES = [
+    { cc: "us", zh: "美国" }, { cc: "ph", zh: "菲律宾" }, { cc: "pk", zh: "巴基斯坦" },
+    { cc: "jp", zh: "日本" }, { cc: "ca", zh: "加拿大" }, { cc: "eg", zh: "埃及" },
+    { cc: "tr", zh: "土耳其" }, { cc: "ng", zh: "尼日利亚" }, { cc: "in", zh: "印度" },
+    { cc: "br", zh: "巴西" }, { cc: "gb", zh: "英国" }, { cc: "sg", zh: "新加坡" }
+  ];
+  const priceChips = $("price-app-chips");
+  const priceLinks = $("price-links");
+
+  function renderPriceLinks() {
+    const app = PRICE_APPS.find((a) => a.key === prefs.priceApp) || PRICE_APPS[0];
+    for (const b of priceChips.children) {
+      const on = b.dataset.value === app.key;
+      b.setAttribute("aria-checked", on ? "true" : "false");
+      b.tabIndex = on ? 0 : -1;
+    }
+    priceLinks.textContent = "";
+    for (const c of PRICE_COUNTRIES) {
+      const a = document.createElement("a");
+      a.className = "country-link" + (c.cc === "us" ? " base" : "");
+      a.href = "https://apps.apple.com/" + c.cc + "/app/id" + app.id;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.setAttribute("aria-label", "在 App Store 查看 " + app.name + " 在" + c.zh + "的价格");
+      const name = document.createElement("span");
+      name.textContent = c.zh;
+      a.appendChild(name);
+      const tagText = c.cc === "us" ? "本工具" : c.cc === app.cheapest ? "8 月最低" : "";
+      const tag = document.createElement("span");
+      tag.className = tagText ? "badge" : "code";
+      tag.textContent = tagText || c.cc.toUpperCase();
+      a.appendChild(tag);
+      priceLinks.appendChild(a);
+    }
+  }
+
+  for (const app of PRICE_APPS) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    b.setAttribute("role", "radio");
+    b.dataset.value = app.key;
+    b.textContent = app.name;
+    b.addEventListener("click", () => {
+      prefs.priceApp = app.key;
+      save(PREFS_KEY, prefs);
+      renderPriceLinks();
+    });
+    priceChips.appendChild(b);
+  }
+  priceChips.addEventListener("keydown", (e) => {
+    if (!["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].includes(e.key)) return;
+    e.preventDefault();
+    const chips = Array.from(priceChips.children);
+    const i = chips.findIndex((b) => b.dataset.value === prefs.priceApp);
+    const step = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1;
+    const next = chips[(i + step + chips.length) % chips.length];
+    next.click();
+    next.focus();
+  });
+
   // ---------- 初始化 ----------
   renderChips();
   syncControls();
   renderTaxTable();
   renderHistory();
+  selectTab(prefs.tab);
+  renderPriceLinks();
   generateOne();
 })();
