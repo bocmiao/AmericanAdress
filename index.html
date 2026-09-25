@@ -11,15 +11,89 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <main class="container">
-    <header class="hero">
-      <h1>美国免税州地址生成器</h1>
-      <p class="subtitle">生成免销售税州的美国地址，用于注册美区 Apple ID。城市和邮编都核对过，彼此匹配。</p>
-      <nav class="jump" aria-label="页面导航">
-        <a href="#guide">注册教程</a>
-        <a href="#prices">各地区订阅价格</a>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#top" aria-label="免税地址生成器，回到顶部">
+        <span class="brand-mark" aria-hidden="true">0%</span>
+        <span class="brand-name">免税地址生成器</span>
+      </a>
+      <nav class="topnav" aria-label="主导航">
+        <a href="#generator">生成</a>
+        <a href="#guide">教程</a>
+        <a href="#prices">价格</a>
       </nav>
-    </header>
+    </div>
+  </header>
+
+  <section class="hero" id="top" aria-labelledby="hero-title">
+    <div class="hero-bg" aria-hidden="true">
+      <span class="blob b1"></span>
+      <span class="blob b2"></span>
+      <span class="blob b3"></span>
+      <span class="dots"></span>
+    </div>
+
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="pulse" aria-hidden="true"></span>已核对 <b id="stat-zips-eyebrow">128</b> 个 USPS 邮编</p>
+        <h1 id="hero-title">美区 Apple 账户<br><span class="grad">免税地址一键生成</span></h1>
+        <p class="hero-sub">Oregon、Delaware 等 5 个免销售税州的真实城市、邮编与街道。账单地址填在免税州，订阅标价 $19.99，就只付 $19.99。</p>
+
+        <div class="addr-pill">
+          <span class="addr-state" id="hero-state">OR</span>
+          <span class="addr-text" id="hero-address"></span>
+          <span class="pill-actions">
+            <button type="button" class="pill-btn" id="hero-refresh" aria-label="换一个地址" title="换一个">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+            </button>
+            <button type="button" class="pill-btn" id="hero-copy" aria-label="复制完整地址" title="复制">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+          </span>
+        </div>
+
+        <div class="hero-cta">
+          <a class="btn primary lg" href="#generator">开始生成</a>
+          <a class="btn ghost lg" href="#guide">注册教程</a>
+        </div>
+
+        <dl class="hero-stats">
+          <div><dt>免税州</dt><dd id="stat-states">5</dd></div>
+          <div><dt>城市</dt><dd id="stat-cities">48</dd></div>
+          <div><dt>核实邮编</dt><dd id="stat-zips">128</dd></div>
+          <div><dt>销售税</dt><dd class="zero">$0</dd></div>
+        </dl>
+      </div>
+
+      <aside class="receipt-wrap" aria-label="扣费示意">
+        <div class="receipt">
+          <div class="receipt-head">
+            <span class="receipt-title">扣费示意</span>
+            <span class="receipt-tag">月付订阅</span>
+          </div>
+          <div class="receipt-billto">
+            <span class="receipt-label">账单地址 · Billing Address</span>
+            <span id="rc-name"></span>
+            <span id="rc-street"></span>
+            <span id="rc-city"></span>
+          </div>
+          <div class="receipt-lines">
+            <div class="rline"><span>订阅价格</span><span>$19.99</span></div>
+            <div class="rline tax"><span>销售税 · <b id="rc-state">OR</b></span><span>$0.00</span></div>
+            <div class="rline total"><span>合计</span><span>$19.99</span></div>
+          </div>
+          <p class="receipt-foot">账单地址在免税州，App Store 不另加销售税</p>
+        </div>
+        <span class="receipt-badge" aria-hidden="true">0% Tax</span>
+      </aside>
+    </div>
+  </section>
+
+  <main class="container">
+    <div class="section-head" id="generator">
+      <h2>生成地址</h2>
+      <p>选好州和城市，点结果里的任意一行即可复制</p>
+    </div>
 
     <section class="card controls" aria-label="生成选项">
       <div class="field-label" id="state-label">选择州</div>

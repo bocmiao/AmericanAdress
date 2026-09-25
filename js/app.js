@@ -29,7 +29,15 @@
     historyCount: $("history-count"),
     clearHistory: $("clear-history-btn"),
     taxTable: $("tax-table-body"),
-    toast: $("toast")
+    toast: $("toast"),
+    heroState: $("hero-state"),
+    heroAddress: $("hero-address"),
+    heroRefresh: $("hero-refresh"),
+    heroCopy: $("hero-copy"),
+    rcName: $("rc-name"),
+    rcStreet: $("rc-street"),
+    rcCity: $("rc-city"),
+    rcState: $("rc-state")
   };
 
   // 字段顺序与 Apple ID 账单地址表单一致
@@ -260,6 +268,21 @@
     }
 
     el.mapLink.href = "https://www.bing.com/maps?q=" + encodeURIComponent(formatOneLine(a));
+    renderHero(a);
+  }
+
+  // 首屏的地址胶囊和扣费示意卡跟随当前结果
+  function renderHero(a) {
+    el.heroState.textContent = a.state;
+    el.heroAddress.textContent = formatOneLine(a);
+    el.heroAddress.classList.remove("swap");
+    void el.heroAddress.offsetWidth; // 重新触发切换动画
+    el.heroAddress.classList.add("swap");
+
+    el.rcName.textContent = a.fullName;
+    el.rcStreet.textContent = a.street + (a.line2 ? " " + a.line2 : "");
+    el.rcCity.textContent = a.city + ", " + a.state + " " + a.zip;
+    el.rcState.textContent = a.state;
   }
 
   const COPY_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
@@ -353,6 +376,25 @@
   }
 
   el.generate.addEventListener("click", generateOne);
+
+  el.heroRefresh.addEventListener("click", () => {
+    generateOne();
+    el.heroRefresh.classList.remove("spin");
+    void el.heroRefresh.offsetWidth;
+    el.heroRefresh.classList.add("spin");
+  });
+  el.heroCopy.addEventListener("click", () => {
+    if (!current) return;
+    addToHistory(current);
+    copyWithToast(formatOneLine(current), "地址").then(() => {
+      el.heroCopy.classList.add("done");
+      el.heroCopy.innerHTML = CHECK_SVG;
+      setTimeout(() => {
+        el.heroCopy.classList.remove("done");
+        el.heroCopy.innerHTML = COPY_SVG;
+      }, 1200);
+    });
+  });
   el.batch.addEventListener("click", () => generateBatch(5));
   el.copyAll.addEventListener("click", () => {
     if (!current) return;
@@ -483,10 +525,25 @@
     next.focus();
   });
 
+  // ---------- 首屏统计数字（由数据计算，避免与数据不一致） ----------
+  function renderStats() {
+    let cities = 0;
+    let zips = 0;
+    for (const st of DATA.states) {
+      cities += st.cities.length;
+      for (const c of st.cities) for (const z of c.zones) zips += z.zips.length;
+    }
+    $("stat-states").textContent = DATA.states.length;
+    $("stat-cities").textContent = cities;
+    $("stat-zips").textContent = zips;
+    $("stat-zips-eyebrow").textContent = zips;
+  }
+
   // ---------- 初始化 ----------
   renderChips();
   syncControls();
   renderTaxTable();
+  renderStats();
   renderHistory();
   selectTab(prefs.tab);
   renderPriceLinks();
