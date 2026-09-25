@@ -308,11 +308,26 @@
     el.historyCount.textContent = history.length ? history.length + " 条" : "";
   }
 
+  // 两步确认：第一次点击进入确认状态，3 秒内再点一次才清空（不依赖 confirm 弹窗）
+  let clearTimer = null;
+  function disarmClear() {
+    clearTimeout(clearTimer);
+    clearTimer = null;
+    el.clearHistory.textContent = "清空历史";
+    el.clearHistory.classList.remove("danger");
+  }
   el.clearHistory.addEventListener("click", () => {
-    if (!confirm("确定清空全部历史记录吗？")) return;
+    if (!clearTimer) {
+      el.clearHistory.textContent = "再点一次确认清空";
+      el.clearHistory.classList.add("danger");
+      clearTimer = setTimeout(disarmClear, 3000);
+      return;
+    }
+    disarmClear();
     history = [];
     save(HISTORY_KEY, history);
     renderHistory();
+    toast("历史记录已清空");
   });
 
   // ---------- 生成 ----------
