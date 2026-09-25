@@ -1,0 +1,10 @@
+{
+  "name": "american-tax-free-address",
+  "version": "1.0.0",
+  "private": true,
+  "description": "美国免税州地址生成器（用于注册美区 Apple ID）",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "start": "python3 -m http.server 8000"
+  }
+}

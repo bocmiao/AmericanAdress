@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="一键生成美国免销售税州（Oregon、Delaware 等）的地址，城市与邮编已核实匹配，适用于注册美区 Apple ID。">
+  <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <title>美国免税州地址生成器</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%87%BA%F0%9F%87%B8%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="container">
+    <header class="hero">
+      <h1>美国免税州地址生成器</h1>
+      <p class="subtitle">生成免销售税州的美国地址，用于注册美区 Apple ID。城市和邮编都核对过，彼此匹配。</p>
+    </header>
+
+    <section class="card controls" aria-label="生成选项">
+      <div class="field-label" id="state-label">选择州</div>
+      <div class="chips" id="state-chips" role="radiogroup" aria-labelledby="state-label"></div>
+
+      <div class="row-controls">
+        <label class="select-wrap">
+          <span class="field-label">城市</span>
+          <select id="city-select" aria-label="城市"></select>
+        </label>
+        <label class="switch">
+          <input type="checkbox" id="unit-toggle">
+          <span class="switch-track" aria-hidden="true"></span>
+          <span>生成公寓号（第二行地址）</span>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn primary" id="generate-btn">生成地址</button>
+        <button type="button" class="btn" id="batch-btn">批量生成 5 个</button>
+      </div>
+      <p class="state-tax" id="state-tax"></p>
+    </section>
+
+    <section class="card result" aria-live="polite" aria-label="生成结果">
+      <div class="result-head">
+        <h2>生成结果</h2>
+        <span class="hint">点击任意一行即可复制</span>
+      </div>
+      <ul class="fields" id="fields"></ul>
+      <div class="actions">
+        <button type="button" class="btn" id="copy-all-btn">复制全部</button>
+        <a class="btn" id="map-link" target="_blank" rel="noopener noreferrer">在地图中查看</a>
+      </div>
+    </section>
+
+    <section class="card" id="batch-section" hidden>
+      <div class="result-head">
+        <h2>批量结果</h2>
+        <span class="hint">点击某一条可设为当前结果</span>
+      </div>
+      <ol class="list" id="batch-list"></ol>
+    </section>
+
+    <section class="card">
+      <details id="history-details">
+        <summary>
+          <h2>历史记录</h2>
+          <span class="hint" id="history-count"></span>
+        </summary>
+        <p class="empty" id="history-empty">还没有记录。复制过的地址会自动保存在本机浏览器里，方便以后找回注册时填写的信息。</p>
+        <ol class="list" id="history-list"></ol>
+        <div class="actions">
+          <button type="button" class="btn subtle" id="clear-history-btn">清空历史</button>
+        </div>
+      </details>
+    </section>
+
+    <section class="card guide">
+      <details>
+        <summary><h2>免税州说明</h2></summary>
+        <p>美国的销售税由各州自行规定，下列 5 个州不征收州级销售税。Apple ID 的账单地址填这些州时，App Store 购买和礼品卡充值都不会额外加税，标价多少就付多少。</p>
+        <table class="tax-table">
+          <thead><tr><th>州</th><th>缩写</th><th>区号</th><th>说明</th></tr></thead>
+          <tbody id="tax-table-body"></tbody>
+        </table>
+      </details>
+      <details>
+        <summary><h2>注册美区 Apple ID 步骤</h2></summary>
+        <ol class="steps">
+          <li>在 iPhone 的「设置 → 媒体与购买项目」中退出当前账户，或在电脑上打开 <a href="https://account.apple.com" target="_blank" rel="noopener noreferrer">account.apple.com</a> 创建新账户。</li>
+          <li>国家或地区选择 <b>United States（美国）</b>。</li>
+          <li>付款方式选择 <b>None（无）</b>。如果没有这个选项，先在 App Store 里点「获取」一个免费 App，再从弹出的窗口中创建账户。</li>
+          <li>账单地址照本页的结果填：Street、City、State、ZIP 分别对应街道、城市、州、邮编。「State」在下拉框里选州名，本页也显示了缩写。</li>
+          <li>账单地址里的电话可以填本页生成的号码（Area Code 是区号，Phone 是 7 位号码）。</li>
+          <li>账户安全验证用的「受信任手机号」必须能收短信，填你自己的真实号码，国内 +86 号码可以用。</li>
+          <li>姓名可以填生成的英文名，也可以填自己的拼音。</li>
+        </ol>
+      </details>
+    </section>
+
+    <footer class="footer">
+      <p>地址由真实的城市、邮编和街道名加随机门牌号组合而成，姓名和电话是随机生成的，不对应任何真实的人。仅供学习和测试使用，请遵守 Apple 服务条款和当地法律，不要用于任何违法用途。</p>
+      <p>所有数据只在你的浏览器里处理，不会上传。</p>
+    </footer>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/generator.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
