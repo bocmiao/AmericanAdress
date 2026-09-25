@@ -13,49 +13,82 @@
 <body>
   <header class="topbar">
     <div class="topbar-inner">
-      <a class="brand" href="#top" aria-label="免税地址，回到顶部">
-        <span class="brand-mark" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>
-        <span class="brand-name">免税地址</span>
+      <a class="brand" href="#top" aria-label="免税地址生成器，回到顶部">
+        <span class="brand-mark" aria-hidden="true">0%</span>
+        <span class="brand-name">免税地址<span class="brand-long">生成器</span></span>
       </a>
-      <nav class="topnav" aria-label="主导航">
-        <a href="#generator">生成</a>
-        <a href="#guide">教程</a>
-        <a href="#prices">价格</a>
-      </nav>
       <div class="topbar-right">
-        <a class="saved-pill" href="#history">已保存 <b id="saved-count">0</b> 个地址</a>
+        <nav class="topnav" aria-label="主导航">
+          <a href="#generator">生成</a>
+          <a href="#guide">教程</a>
+          <a href="#prices">价格</a>
+        </nav>
         <button type="button" class="icon-btn theme-toggle" id="theme-toggle" aria-label="切换深色/浅色模式" title="切换深色/浅色模式"><svg class="moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><svg class="sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
       </div>
     </div>
   </header>
 
   <section class="hero" id="top" aria-labelledby="hero-title">
+    <div class="hero-bg" aria-hidden="true">
+      <span class="blob b1"></span>
+      <span class="blob b2"></span>
+      <span class="blob b3"></span>
+      <span class="dots"></span>
+    </div>
+
     <div class="hero-inner">
       <div class="hero-copy">
-        <h1 id="hero-title">一键生成<br><span class="num" id="stat-states">5</span> 个免税州的<span class="nb">美国地址</span></h1>
-        <p class="hero-sub">Oregon、Delaware、Montana、New Hampshire、Alaska……城市与邮编逐个核对 USPS 邮编库，点一下就能复制。账单地址填在免税州，订阅标价 $19.99，就只付 $19.99。</p>
+        <p class="eyebrow"><span class="pulse" aria-hidden="true"></span>已核对 <b id="stat-zips-eyebrow">128</b> 个 USPS 邮编</p>
+        <h1 id="hero-title">美区 Apple 账户<br><span class="grad">免税地址一键生成</span></h1>
+        <p class="hero-sub">Oregon、Delaware 等 5 个免销售税州的真实城市、邮编与街道。账单地址填在免税州，订阅标价 $19.99，就只付 $19.99。</p>
+
+        <div class="addr-pill">
+          <span class="addr-state" id="hero-state">OR</span>
+          <span class="addr-text" id="hero-address"></span>
+          <span class="pill-actions">
+            <button type="button" class="pill-btn" id="hero-refresh" aria-label="换一个地址" title="换一个">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+            </button>
+            <button type="button" class="pill-btn" id="hero-copy" aria-label="复制完整地址" title="复制">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+          </span>
+        </div>
+
         <div class="hero-cta">
           <a class="btn primary lg" href="#generator">开始生成</a>
           <a class="btn ghost lg" href="#guide">注册教程</a>
         </div>
+
         <dl class="hero-stats">
-          <div><dt>个城市</dt><dd id="stat-cities">48</dd></div>
-          <div><dt>个核实邮编</dt><dd id="stat-zips">128</dd></div>
-          <div><dt>销售税</dt><dd class="zero">$0.00</dd></div>
+          <div><dt>免税州</dt><dd id="stat-states">5</dd></div>
+          <div><dt>城市</dt><dd id="stat-cities">48</dd></div>
+          <div><dt>核实邮编</dt><dd id="stat-zips">128</dd></div>
+          <div><dt>销售税</dt><dd class="zero">$0</dd></div>
         </dl>
       </div>
 
-      <div class="terminal" aria-label="当前生成结果">
-        <div class="term-bar">
-          <span class="term-dots" aria-hidden="true"><span></span><span></span><span></span></span>
-          <span class="term-title">address.json</span>
-          <span class="term-actions">
-            <button type="button" class="term-btn" id="term-refresh">换一个</button>
-            <button type="button" class="term-btn" id="term-copy">复制</button>
-          </span>
+      <aside class="receipt-wrap" aria-label="扣费示意">
+        <div class="receipt">
+          <div class="receipt-head">
+            <span class="receipt-title">扣费示意</span>
+            <span class="receipt-tag">月付订阅</span>
+          </div>
+          <div class="receipt-billto">
+            <span class="receipt-label">账单地址 · Billing Address</span>
+            <span id="rc-name"></span>
+            <span id="rc-street"></span>
+            <span id="rc-city"></span>
+          </div>
+          <div class="receipt-lines">
+            <div class="rline"><span>订阅价格</span><span>$19.99</span></div>
+            <div class="rline tax"><span>销售税 · <b id="rc-state">OR</b></span><span>$0.00</span></div>
+            <div class="rline total"><span>合计</span><span>$19.99</span></div>
+          </div>
+          <p class="receipt-foot">账单地址在免税州，App Store 不另加销售税</p>
         </div>
-        <pre class="term-body" id="term-body"></pre>
-      </div>
+        <span class="receipt-badge" aria-hidden="true">0% Tax</span>
+      </aside>
     </div>
   </section>
 
@@ -196,26 +229,21 @@
 
       <section class="card prose" id="prices" aria-labelledby="prices-title">
         <h2 id="prices-title">各地区订阅价格</h2>
-        <p>美区账户 + 免税州地址：ChatGPT Plus 和 Claude Pro 都是 <b>$19.99/月</b>，不另加税。</p>
+        <p>美区账户 + 免税州地址：ChatGPT Plus 和 Claude Pro 都是 <b>$19.99/月</b>，不另加税。其他地区的 App Store 价格对比如下：</p>
 
+        <div class="chips" id="price-app-chips" role="radiogroup" aria-label="选择订阅"></div>
         <div class="table-scroll">
-          <table class="data-table">
-            <caption>2026 年 8 月第三方统计的 App Store 最低价</caption>
-            <thead><tr><th>订阅</th><th>最便宜的地区</th><th>约合美元</th><th>比美区</th></tr></thead>
-            <tbody>
-              <tr><td>ChatGPT Plus</td><td>菲律宾 ₱999</td><td>≈ $16</td><td>−20%</td></tr>
-              <tr><td>Claude Pro</td><td>巴基斯坦 Rs 4,900</td><td>≈ $17.6</td><td>−12%</td></tr>
-            </tbody>
+          <table class="data-table price-table">
+            <thead>
+              <tr><th>地区</th><th>价格（约合美元）</th><th>比美区</th><th><span class="sr-only">核实</span></th></tr>
+            </thead>
+            <tbody id="price-rows"></tbody>
           </table>
         </div>
+        <p class="hint-text" id="price-source"></p>
 
-        <p>2026 年 6 月以前，土耳其的 ChatGPT Plus（₺499.99）和尼日利亚的 Claude Pro（₦14,900）只要美区一半左右的价格。6 月两边都把价格翻了一倍，现在已经和美区差不多甚至更贵。</p>
+        <p>2026 年 6 月以前，土耳其的 ChatGPT Plus（₺499.99）和尼日利亚的 Claude Pro（₦14,900）只要美区一半左右的价格。6 月两边都把价格翻了一倍，现在已经比美区还贵。</p>
         <p class="note">本工具只做美区地址：现在最多只差 $2–4/月，而这些地区要用当地的礼品卡或支付方式，通过第三方购买一般要加价，差价基本抵消；价格还可能像土耳其、尼日利亚那样一夜翻倍。美区礼品卡好买、App 最全，综合下来更省事。</p>
-
-        <h3>查看实时价格</h3>
-        <p class="hint-text">价格随汇率和厂商调价变化，以 App Store 实时显示为准。打开后看「App 内购买项目（In-App Purchases）」一栏。除美国和加拿大外，大多数地区的标价已含当地税。</p>
-        <div class="chips" id="price-app-chips" role="radiogroup" aria-label="选择 App"></div>
-        <div class="country-links" id="price-links"></div>
       </section>
 
     </div>

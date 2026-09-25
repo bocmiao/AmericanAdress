@@ -30,10 +30,14 @@
     clearHistory: $("clear-history-btn"),
     taxTable: $("tax-table-body"),
     toast: $("toast"),
-    termBody: $("term-body"),
-    termRefresh: $("term-refresh"),
-    termCopy: $("term-copy"),
-    savedCount: $("saved-count"),
+    heroState: $("hero-state"),
+    heroAddress: $("hero-address"),
+    heroRefresh: $("hero-refresh"),
+    heroCopy: $("hero-copy"),
+    rcName: $("rc-name"),
+    rcStreet: $("rc-street"),
+    rcCity: $("rc-city"),
+    rcState: $("rc-state"),
     themeToggle: $("theme-toggle")
   };
 
@@ -268,46 +272,18 @@
     renderHero(a);
   }
 
-  // 首屏代码窗口：用 generate() 的调用和返回值展示当前结果
-  function span(cls, text) {
-    const e = document.createElement("span");
-    e.className = cls;
-    e.textContent = text;
-    return e;
-  }
-
+  // 首屏的地址胶囊和扣费示意卡跟随当前结果
   function renderHero(a) {
-    const body = el.termBody;
-    body.textContent = "";
-    const add = (...nodes) => nodes.forEach((n) => body.append(n));
+    el.heroState.textContent = a.state;
+    el.heroAddress.textContent = formatOneLine(a);
+    el.heroAddress.classList.remove("swap");
+    void el.heroAddress.offsetWidth; // 重新触发切换动画
+    el.heroAddress.classList.add("swap");
 
-    const args = ['state: "' + (prefs.state || RANDOM) + '"'];
-    if (prefs.city) args.push('city: "' + prefs.city + '"');
-    if (prefs.unit) args.push("unit: true");
-    const oneLine = "generate({ " + args.join(", ") + " })";
-    const cmd = oneLine.length <= 36 ? oneLine : "generate({\n    " + args.join(",\n    ") + "\n  })";
-    add(span("t-prompt", "> "), span("t-cmd", cmd), "\n\n");
-
-    const rows = [
-      ["firstName", a.firstName],
-      ["lastName", a.lastName],
-      ["street", a.street]
-    ];
-    if (a.line2) rows.push(["street2", a.line2]);
-    rows.push(["city", a.city], ["state", a.state], ["zip", a.zip], ["phone", a.phone],
-      ["country", a.country], ["salesTax", 0]);
-
-    add(span("t-punc", "{"), "\n");
-    rows.forEach(([k, v], i) => {
-      add("  ", span("t-key", '"' + k + '"'), span("t-punc", ": "));
-      add(typeof v === "number" ? span("t-num", String(v)) : span("t-str", '"' + v + '"'));
-      add(span("t-punc", i < rows.length - 1 ? "," : ""), "\n");
-    });
-    add(span("t-punc", "}"));
-
-    body.classList.remove("swap");
-    void body.offsetWidth; // 重新触发切换动画
-    body.classList.add("swap");
+    el.rcName.textContent = a.fullName;
+    el.rcStreet.textContent = a.street + (a.line2 ? " " + a.line2 : "");
+    el.rcCity.textContent = a.city + ", " + a.state + " " + a.zip;
+    el.rcState.textContent = a.state;
   }
 
   const COPY_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
@@ -355,7 +331,6 @@
     el.historyEmpty.hidden = history.length > 0;
     el.clearHistory.hidden = history.length === 0;
     el.historyCount.textContent = history.length ? history.length + " 条" : "";
-    el.savedCount.textContent = history.length;
   }
 
   // 两步确认：第一次点击进入确认状态，3 秒内再点一次才清空（不依赖 confirm 弹窗）
@@ -403,16 +378,21 @@
 
   el.generate.addEventListener("click", generateOne);
 
-  el.termRefresh.addEventListener("click", generateOne);
-  el.termCopy.addEventListener("click", () => {
+  el.heroRefresh.addEventListener("click", () => {
+    generateOne();
+    el.heroRefresh.classList.remove("spin");
+    void el.heroRefresh.offsetWidth;
+    el.heroRefresh.classList.add("spin");
+  });
+  el.heroCopy.addEventListener("click", () => {
     if (!current) return;
     addToHistory(current);
-    copyWithToast(formatAll(current), "全部信息").then(() => {
-      el.termCopy.textContent = "已复制";
-      el.termCopy.classList.add("done");
+    copyWithToast(formatOneLine(current), "地址").then(() => {
+      el.heroCopy.classList.add("done");
+      el.heroCopy.innerHTML = CHECK_SVG;
       setTimeout(() => {
-        el.termCopy.textContent = "复制";
-        el.termCopy.classList.remove("done");
+        el.heroCopy.classList.remove("done");
+        el.heroCopy.innerHTML = COPY_SVG;
       }, 1200);
     });
   });
@@ -480,48 +460,109 @@
     selectTab(tabs[next].dataset.tab, true);
   });
 
-  // ---------- 各地区价格（链接到 App Store 官方页面，价格实时） ----------
-  const PRICE_APPS = [
-    { key: "chatgpt", name: "ChatGPT", id: "6448311069", cheapest: "ph" },
-    { key: "claude", name: "Claude", id: "6473753684", cheapest: "pk" }
+  // ---------- 各地区价格（第三方统计的 App Store 标价，附官方页面链接便于核实） ----------
+  // 只收录多个来源一致的数字；当地标价未能确认的写 null，页面上不显示标价
+  const US_PRICE = 19.99;
+  const PRICE_DATA = [
+    {
+      key: "chatgpt", name: "ChatGPT Plus", appId: "6448311069",
+      source: "数据：第三方统计，2026 年 9 月 16 日采集的 39 个地区 App Store 标价。",
+      rows: [
+        { cc: "ph", zh: "菲律宾", local: "₱999", usd: 15.93, note: "最便宜" },
+        { cc: "ca", zh: "加拿大", local: null, usd: 17.93, note: "标价不含税" },
+        { cc: "jp", zh: "日本", local: "¥3,000", usd: 19.35 },
+        { cc: "us", zh: "美国", local: "$19.99", usd: 19.99, note: "本工具 · 免税州", base: true },
+        { cc: "tr", zh: "土耳其", local: "₺999.99", usd: 20.48, note: "6 月涨价一倍" },
+        { cc: "hu", zh: "匈牙利", local: "HUF 8,990", usd: 28.46, note: "最贵" }
+      ]
+    },
+    {
+      key: "claude", name: "Claude Pro", appId: "6473753684",
+      source: "数据：第三方统计，2026 年 8 月的 App Store 标价。",
+      rows: [
+        { cc: "pk", zh: "巴基斯坦", local: "Rs 4,900", usd: 17.62, note: "最便宜" },
+        { cc: "jp", zh: "日本", local: "¥3,000", usd: 19.03 },
+        { cc: "eg", zh: "埃及", local: null, usd: 19.89 },
+        { cc: "ca", zh: "加拿大", local: null, usd: 19.91, note: "标价不含税" },
+        { cc: "us", zh: "美国", local: "$19.99", usd: 19.99, note: "本工具 · 免税州", base: true },
+        { cc: "ng", zh: "尼日利亚", local: "₦29,900", usd: 22.5, note: "6 月涨价一倍" },
+        { cc: "dk", zh: "丹麦", local: null, usd: 27.63, note: "最贵" }
+      ]
+    }
   ];
-  const PRICE_COUNTRIES = [
-    { cc: "us", zh: "美国" }, { cc: "ph", zh: "菲律宾" }, { cc: "pk", zh: "巴基斯坦" },
-    { cc: "jp", zh: "日本" }, { cc: "ca", zh: "加拿大" }, { cc: "eg", zh: "埃及" },
-    { cc: "tr", zh: "土耳其" }, { cc: "ng", zh: "尼日利亚" }, { cc: "in", zh: "印度" },
-    { cc: "br", zh: "巴西" }, { cc: "gb", zh: "英国" }, { cc: "sg", zh: "新加坡" }
-  ];
+  const PRICE_FOOTNOTE = "约合美元按统计当天汇率折算。美国和加拿大的标价不含税（加拿大还要加 5%–15% 销售税），其他地区大多已含税。"
+    + "没写当地标价的是未能确认。价格会随厂商调价变化，点 ↗ 可在 App Store 核实（看「App 内购买项目」）。";
   const priceChips = $("price-app-chips");
-  const priceLinks = $("price-links");
+  const priceRows = $("price-rows");
+  const VERIFY_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>';
 
-  function renderPriceLinks() {
-    const app = PRICE_APPS.find((a) => a.key === prefs.priceApp) || PRICE_APPS[0];
+  function deltaBadge(row) {
+    const b = document.createElement("span");
+    if (row.base) {
+      b.className = "delta base";
+      b.textContent = "基准";
+      return b;
+    }
+    const pct = ((row.usd - US_PRICE) / US_PRICE) * 100;
+    if (Math.abs(pct) < 1) {
+      b.className = "delta flat";
+      b.textContent = "持平";
+    } else {
+      b.className = "delta " + (pct < 0 ? "down" : "up");
+      b.textContent = (pct < 0 ? "−" : "+") + Math.round(Math.abs(pct)) + "%";
+    }
+    return b;
+  }
+
+  function renderPriceTable() {
+    const app = PRICE_DATA.find((a) => a.key === prefs.priceApp) || PRICE_DATA[0];
     for (const b of priceChips.children) {
       const on = b.dataset.value === app.key;
       b.setAttribute("aria-checked", on ? "true" : "false");
       b.tabIndex = on ? 0 : -1;
     }
-    priceLinks.textContent = "";
-    for (const c of PRICE_COUNTRIES) {
+    priceRows.textContent = "";
+    for (const row of app.rows) {
+      const tr = document.createElement("tr");
+      if (row.base) tr.className = "base";
+
+      const name = document.createElement("td");
+      name.textContent = row.zh;
+      if (row.note) {
+        const n = document.createElement("span");
+        n.className = "row-note";
+        n.textContent = row.note;
+        name.appendChild(n);
+      }
+      const price = document.createElement("td");
+      price.textContent = (row.base ? "" : "≈ ") + "$" + row.usd.toFixed(2);
+      if (row.local && !row.base) {
+        const l = document.createElement("span");
+        l.className = "price-local";
+        l.textContent = "标价 " + row.local;
+        price.appendChild(l);
+      }
+      const delta = document.createElement("td");
+      delta.appendChild(deltaBadge(row));
+
+      const link = document.createElement("td");
       const a = document.createElement("a");
-      a.className = "country-link" + (c.cc === "us" ? " base" : "");
-      a.href = "https://apps.apple.com/" + c.cc + "/app/id" + app.id;
+      a.className = "verify";
+      a.href = "https://apps.apple.com/" + row.cc + "/app/id" + app.appId;
       a.target = "_blank";
       a.rel = "noopener noreferrer";
-      a.setAttribute("aria-label", "在 App Store 查看 " + app.name + " 在" + c.zh + "的价格");
-      const name = document.createElement("span");
-      name.textContent = c.zh;
-      a.appendChild(name);
-      const tagText = c.cc === "us" ? "本工具" : c.cc === app.cheapest ? "8 月最低" : "";
-      const tag = document.createElement("span");
-      tag.className = tagText ? "badge" : "code";
-      tag.textContent = tagText || c.cc.toUpperCase();
-      a.appendChild(tag);
-      priceLinks.appendChild(a);
+      a.title = "在 App Store 核实";
+      a.setAttribute("aria-label", "在 App Store 核实" + row.zh + "的 " + app.name + " 价格");
+      a.innerHTML = VERIFY_SVG;
+      link.appendChild(a);
+
+      tr.append(name, price, delta, link);
+      priceRows.appendChild(tr);
     }
+    $("price-source").textContent = app.source + PRICE_FOOTNOTE;
   }
 
-  for (const app of PRICE_APPS) {
+  for (const app of PRICE_DATA) {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "chip";
@@ -531,7 +572,7 @@
     b.addEventListener("click", () => {
       prefs.priceApp = app.key;
       save(PREFS_KEY, prefs);
-      renderPriceLinks();
+      renderPriceTable();
     });
     priceChips.appendChild(b);
   }
@@ -557,6 +598,7 @@
     $("stat-states").textContent = DATA.states.length;
     $("stat-cities").textContent = cities;
     $("stat-zips").textContent = zips;
+    $("stat-zips-eyebrow").textContent = zips;
   }
 
   // ---------- 深浅色切换（未手动切换时跟随系统） ----------
@@ -598,11 +640,6 @@
   window.addEventListener("scroll", updateNav, { passive: true });
   window.addEventListener("resize", updateNav);
 
-  // 顶栏的"已保存"跳到历史记录时顺便展开
-  document.querySelector(".saved-pill").addEventListener("click", () => {
-    el.historyDetails.open = true;
-  });
-
   // ---------- 初始化 ----------
   renderChips();
   syncControls();
@@ -610,7 +647,7 @@
   renderStats();
   renderHistory();
   selectTab(prefs.tab);
-  renderPriceLinks();
+  renderPriceTable();
   generateOne();
   updateNav();
 })();
