@@ -30,14 +30,11 @@
     clearHistory: $("clear-history-btn"),
     taxTable: $("tax-table-body"),
     toast: $("toast"),
-    heroState: $("hero-state"),
-    heroAddress: $("hero-address"),
-    heroRefresh: $("hero-refresh"),
-    heroCopy: $("hero-copy"),
-    rcName: $("rc-name"),
-    rcStreet: $("rc-street"),
-    rcCity: $("rc-city"),
-    rcState: $("rc-state")
+    termBody: $("term-body"),
+    termRefresh: $("term-refresh"),
+    termCopy: $("term-copy"),
+    savedCount: $("saved-count"),
+    themeToggle: $("theme-toggle")
   };
 
   // 字段顺序与 Apple ID 账单地址表单一致
@@ -271,18 +268,46 @@
     renderHero(a);
   }
 
-  // 首屏的地址胶囊和扣费示意卡跟随当前结果
-  function renderHero(a) {
-    el.heroState.textContent = a.state;
-    el.heroAddress.textContent = formatOneLine(a);
-    el.heroAddress.classList.remove("swap");
-    void el.heroAddress.offsetWidth; // 重新触发切换动画
-    el.heroAddress.classList.add("swap");
+  // 首屏代码窗口：用 generate() 的调用和返回值展示当前结果
+  function span(cls, text) {
+    const e = document.createElement("span");
+    e.className = cls;
+    e.textContent = text;
+    return e;
+  }
 
-    el.rcName.textContent = a.fullName;
-    el.rcStreet.textContent = a.street + (a.line2 ? " " + a.line2 : "");
-    el.rcCity.textContent = a.city + ", " + a.state + " " + a.zip;
-    el.rcState.textContent = a.state;
+  function renderHero(a) {
+    const body = el.termBody;
+    body.textContent = "";
+    const add = (...nodes) => nodes.forEach((n) => body.append(n));
+
+    const args = ['state: "' + (prefs.state || RANDOM) + '"'];
+    if (prefs.city) args.push('city: "' + prefs.city + '"');
+    if (prefs.unit) args.push("unit: true");
+    const oneLine = "generate({ " + args.join(", ") + " })";
+    const cmd = oneLine.length <= 36 ? oneLine : "generate({\n    " + args.join(",\n    ") + "\n  })";
+    add(span("t-prompt", "> "), span("t-cmd", cmd), "\n\n");
+
+    const rows = [
+      ["firstName", a.firstName],
+      ["lastName", a.lastName],
+      ["street", a.street]
+    ];
+    if (a.line2) rows.push(["street2", a.line2]);
+    rows.push(["city", a.city], ["state", a.state], ["zip", a.zip], ["phone", a.phone],
+      ["country", a.country], ["salesTax", 0]);
+
+    add(span("t-punc", "{"), "\n");
+    rows.forEach(([k, v], i) => {
+      add("  ", span("t-key", '"' + k + '"'), span("t-punc", ": "));
+      add(typeof v === "number" ? span("t-num", String(v)) : span("t-str", '"' + v + '"'));
+      add(span("t-punc", i < rows.length - 1 ? "," : ""), "\n");
+    });
+    add(span("t-punc", "}"));
+
+    body.classList.remove("swap");
+    void body.offsetWidth; // 重新触发切换动画
+    body.classList.add("swap");
   }
 
   const COPY_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
@@ -330,6 +355,7 @@
     el.historyEmpty.hidden = history.length > 0;
     el.clearHistory.hidden = history.length === 0;
     el.historyCount.textContent = history.length ? history.length + " 条" : "";
+    el.savedCount.textContent = history.length;
   }
 
   // 两步确认：第一次点击进入确认状态，3 秒内再点一次才清空（不依赖 confirm 弹窗）
@@ -377,21 +403,16 @@
 
   el.generate.addEventListener("click", generateOne);
 
-  el.heroRefresh.addEventListener("click", () => {
-    generateOne();
-    el.heroRefresh.classList.remove("spin");
-    void el.heroRefresh.offsetWidth;
-    el.heroRefresh.classList.add("spin");
-  });
-  el.heroCopy.addEventListener("click", () => {
+  el.termRefresh.addEventListener("click", generateOne);
+  el.termCopy.addEventListener("click", () => {
     if (!current) return;
     addToHistory(current);
-    copyWithToast(formatOneLine(current), "地址").then(() => {
-      el.heroCopy.classList.add("done");
-      el.heroCopy.innerHTML = CHECK_SVG;
+    copyWithToast(formatAll(current), "全部信息").then(() => {
+      el.termCopy.textContent = "已复制";
+      el.termCopy.classList.add("done");
       setTimeout(() => {
-        el.heroCopy.classList.remove("done");
-        el.heroCopy.innerHTML = COPY_SVG;
+        el.termCopy.textContent = "复制";
+        el.termCopy.classList.remove("done");
       }, 1200);
     });
   });
@@ -536,8 +557,51 @@
     $("stat-states").textContent = DATA.states.length;
     $("stat-cities").textContent = cities;
     $("stat-zips").textContent = zips;
-    $("stat-zips-eyebrow").textContent = zips;
   }
+
+  // ---------- 深浅色切换（未手动切换时跟随系统） ----------
+  const THEME_KEY = "tfag.theme";
+  const root = document.documentElement;
+  const darkQuery = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+
+  function effectiveTheme() {
+    return root.dataset.theme || (darkQuery && darkQuery.matches ? "dark" : "light");
+  }
+  const savedTheme = load(THEME_KEY, null);
+  if (savedTheme === "light" || savedTheme === "dark") root.dataset.theme = savedTheme;
+  el.themeToggle.addEventListener("click", () => {
+    const next = effectiveTheme() === "dark" ? "light" : "dark";
+    root.dataset.theme = next;
+    save(THEME_KEY, next);
+  });
+
+  // ---------- 导航高亮当前区块 ----------
+  const navLinks = Array.from(document.querySelectorAll(".topnav a"));
+  const navTargets = navLinks.map((a) => document.querySelector(a.getAttribute("href")));
+  function updateNav() {
+    let active = 0;
+    let activeTop = null;
+    navTargets.forEach((t, i) => {
+      const top = t.getBoundingClientRect().top;
+      if (top >= 140) return;
+      // 同一行并排的区块（桌面端的教程和价格）高亮靠前的那个
+      if (activeTop !== null && Math.abs(top - activeTop) < 8) return;
+      active = i;
+      activeTop = top;
+    });
+    navLinks.forEach((a, i) => {
+      a.classList.toggle("active", i === active);
+      if (i === active) a.setAttribute("aria-current", "true");
+      else a.removeAttribute("aria-current");
+    });
+  }
+  window.addEventListener("scroll", updateNav, { passive: true });
+  window.addEventListener("resize", updateNav);
+
+  // 顶栏的"已保存"跳到历史记录时顺便展开
+  document.querySelector(".saved-pill").addEventListener("click", () => {
+    el.historyDetails.open = true;
+  });
 
   // ---------- 初始化 ----------
   renderChips();
@@ -548,4 +612,5 @@
   selectTab(prefs.tab);
   renderPriceLinks();
   generateOne();
+  updateNav();
 })();
